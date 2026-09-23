@@ -13,8 +13,8 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "Promptbook Starter",
-  description: "A Promptbook-branded Next.js starter for practical AI products.",
+  title: "Chess Trainer",
+  description: "Play chess against an adjustable-strength engine, study openings, and review your games.",
 };
 
 export default function RootLayout({
