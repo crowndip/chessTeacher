@@ -24,7 +24,37 @@ export type SequenceMotif =
   | "capturingDefender"
   | "attraction"
   | "anastasiaMate"
-  | "bodenMate";
+  | "bodenMate"
+  | "advancedPawn"
+  | "attackingF2F7"
+  | "clearance"
+  | "collinearMove"
+  | "defensiveMove"
+  | "discoveredAttack"
+  | "doubleCheck"
+  | "enPassant"
+  | "hangingPiece"
+  | "interference"
+  | "quietMove"
+  | "sacrifice"
+  | "trappedPiece"
+  | "xRayAttack"
+  | "zugzwang"
+  | "arabianMate"
+  | "balestraMate"
+  | "blindSwineMate"
+  | "cornerMate"
+  | "doubleBishopMate"
+  | "dovetailMate"
+  | "epauletteMate"
+  | "hookMate"
+  | "killBoxMate"
+  | "morphysMate"
+  | "operaMate"
+  | "pillsburysMate"
+  | "swallowstailMate"
+  | "triangleMate"
+  | "vukovicMate";
 
 const DIFFICULTY_BY_SKILL_LEVEL: Record<SkillLevel, "easiest" | "easier" | "harder" | "hardest"> = {
   beginner: "easiest",
@@ -71,6 +101,39 @@ const MOTIF_HINTS: Record<SequenceMotif, [string, string]> = {
     "Two bishops on crossing diagonals can be deadly to a boxed-in king.",
     "Look for a way to open a diagonal straight at the king.",
   ],
+  advancedPawn: ["Nothing stands between your pawn and the last rank.", "Push it all the way to a queen."],
+  attackingF2F7: ["f7 is defended only by the king this early — is anything attacking it twice?", "Jump a piece into f7."],
+  clearance: ["Something is in your own piece's way.", "Move the blocking piece out of the way, ideally with tempo."],
+  collinearMove: [
+    "Your rook and the enemy rook are already staring at each other on the same line.",
+    "Slide your piece further up that same line, without trading.",
+  ],
+  defensiveMove: ["The king has no escape squares — this check must be blocked, not run from.", "Find the only move that holds the position together."],
+  discoveredAttack: ["A piece of yours is blocking your own attack on something valuable.", "Move it away — see what it reveals."],
+  doubleCheck: ["Moving one piece can attack the king directly and reveal a check from behind it.", "Look for a move that gives two checks at once."],
+  enPassant: ["A black pawn just jumped two squares past yours — there's a special rule for that.", "Capture it as if it had only moved one square."],
+  hangingPiece: ["Scan the board for a piece nobody is protecting.", "Just capture it — no tricks needed."],
+  interference: ["A piece landing between two enemy pieces can cut a defense.", "Find the square that blocks the defender's line."],
+  quietMove: ["Nothing needs to happen on this move — think about what could go wrong later instead.", "Look for a calm move that removes your opponent's only hope."],
+  sacrifice: ["Material doesn't matter if you can win it back with interest.", "Give up material to open the position or the king."],
+  trappedPiece: ["An enemy piece has very few squares to escape to.", "Cover its remaining escape squares one by one."],
+  xRayAttack: ["One of your pieces is defending a square all the way through an enemy piece.", "Look past the piece in front — what's really being defended?"],
+  zugzwang: ["Every move available here makes the position worse — that's the whole idea.", "Find the least-bad option; there is no good one."],
+  arabianMate: ["The knight already covers both of the king's escape squares.", "Bring the rook all the way down the open file."],
+  balestraMate: ["A bishop check needs a defender in place first.", "Capture toward the king with the bishop."],
+  blindSwineMate: ["Two rooks doubled on the 7th rank can dominate a king trapped on the back rank.", "Bring the second rook onto the 7th rank to join the first."],
+  cornerMate: ["The queen already covers every escape square around the corner.", "Jump the knight in to finish it."],
+  doubleBishopMate: ["One bishop already covers half the board — bring the second one into the attack.", "Move the other bishop onto the diagonal."],
+  dovetailMate: ["The king's own pieces are blocking both of its escape squares.", "Bring the queen in beside the king, defended."],
+  epauletteMate: ["The king's own pieces are blocking its escape, not helping it.", "Deliver check right in front of the king."],
+  hookMate: ["Bring your rook onto the open file — a knight and a pawn cover the rest.", "Check along the file."],
+  killBoxMate: ["Your queen already covers the squares beside the king.", "Bring the rook in to deliver check."],
+  morphysMate: ["Capturing near the king gives check — make sure that piece is protected first.", "Capture toward the king with the bishop."],
+  operaMate: ["Capturing gives check, and something is already covering that square.", "Capture with the rook."],
+  pillsburysMate: ["Slide your rook onto the open file — your bishop already covers the other escape square.", "Check along the file."],
+  swallowstailMate: ["A defended queen right next to a cornered king covers everything around it.", "Bring the queen in beside the king."],
+  triangleMate: ["A piece lined up behind where your queen wants to go can defend her there.", "Bring the queen in to deliver check."],
+  vukovicMate: ["A bishop is already guarding the square your rook wants to land on.", "Bring the rook in to check."],
 };
 
 export type ExerciseResult = {
