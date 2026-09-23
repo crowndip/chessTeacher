@@ -35,11 +35,49 @@ Two services, wired together with Docker Compose:
 
 ## Installation
 
-The app ships as two Docker images (above), so installing it is just
-building and starting them — no manual Node, npm or Stockfish setup
-required, and no accounts, API keys or configuration to fill in.
+No manual Node, npm or Stockfish setup, and no accounts, API keys or
+configuration to fill in either way — just Docker.
 
-### Prerequisites
+### Option A: Pre-built images (easiest, no cloning)
+
+Every push to `main` publishes ready-to-run images to GitHub Container
+Registry. You only need one small file, not the repository:
+
+```bash
+curl -O https://raw.githubusercontent.com/crowndip/chessTeacher/main/docker-compose.prod.yml
+docker compose -f docker-compose.prod.yml up -d
+```
+
+Requires Docker with the Compose plugin (see Prerequisites below).
+Open **http://localhost:3000** once it's up.
+
+To update later:
+
+```bash
+docker compose -f docker-compose.prod.yml pull
+docker compose -f docker-compose.prod.yml up -d
+```
+
+#### Deploying with Portainer
+
+Portainer can pull and deploy this directly from GitHub — nothing to
+download by hand:
+
+1. In Portainer, go to **Stacks → Add stack**.
+2. Choose **Repository** as the build method.
+3. Repository URL: `https://github.com/crowndip/chessTeacher`
+4. Compose path: `docker-compose.prod.yml`
+5. Deploy the stack. Portainer fetches the compose file and pulls the
+   pre-built images itself.
+6. Optional: turn on GitOps updates so Portainer redeploys
+   automatically whenever `docker-compose.prod.yml` changes on `main`.
+
+### Option B: Build from source
+
+For contributors, or if you'd rather build the images yourself instead
+of pulling them.
+
+#### Prerequisites
 
 - **Docker**, with the **Compose plugin** (`docker compose`, no hyphen).
   - Mac/Windows: install [Docker Desktop](https://www.docker.com/products/docker-desktop/) — it includes Compose.
@@ -56,14 +94,14 @@ docker --version
 docker compose version
 ```
 
-### 1. Get the code
+#### 1. Get the code
 
 ```bash
 git clone https://github.com/crowndip/chessTeacher.git
 cd chessTeacher
 ```
 
-### 2. Build and start it
+#### 2. Build and start it
 
 ```bash
 docker compose up -d --build
@@ -75,22 +113,13 @@ expect a few minutes depending on your connection. `-d` runs it in
 the background; drop it if you'd rather watch the logs in your
 terminal.
 
-### 3. Open it
+#### 3. Open it
 
 Visit **http://localhost:3000**. The engine container has no
 published port by design — only `web` is reachable from outside
 Docker, and it proxies engine requests server-side.
 
-### Everyday use
-
-```bash
-docker compose stop      # stop both containers, keep them for later
-docker compose start     # start them again
-docker compose down      # stop and remove the containers (images stay)
-docker compose logs -f   # follow logs from both services
-```
-
-### Updating to a newer version
+#### Updating to a newer version
 
 ```bash
 git pull
@@ -100,10 +129,22 @@ docker compose up -d --build
 Compose rebuilds only what changed and restarts the affected
 container(s).
 
+### Everyday use
+
+Same commands for either option — add `-f docker-compose.prod.yml` if
+you used Option A:
+
+```bash
+docker compose stop      # stop both containers, keep them for later
+docker compose start     # start them again
+docker compose down      # stop and remove the containers (images stay)
+docker compose logs -f   # follow logs from both services
+```
+
 ### Troubleshooting
 
 - **Port 3000 already in use** — edit the `ports` line under `web` in
-  `docker-compose.yml` (e.g. `"3001:3000"`) and reopen at the new port.
+  your compose file (e.g. `"3001:3000"`) and reopen at the new port.
 - **`docker compose` not found** — you likely have only the older,
   standalone `docker-compose` (with a hyphen); install the Compose
   plugin instead (see Prerequisites), or substitute `docker-compose`
