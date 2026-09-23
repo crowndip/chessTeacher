@@ -2,9 +2,8 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Card } from "@/components/ui";
 import { SiteShell } from "@/components/site-shell";
-import { MoveStepper } from "@/components/chess/move-stepper";
+import { OpeningViewer } from "@/components/chess/opening-viewer";
 import { getOpening, OPENINGS } from "@/lib/chess-data/openings";
-import { STANDARD_START_FEN } from "@/lib/chess/fen";
 
 export function generateStaticParams() {
   return OPENINGS.map((opening) => ({ slug: opening.slug }));
@@ -30,7 +29,7 @@ export default async function OpeningDetailPage({
       </div>
 
       <div className="detail-layout">
-        <MoveStepper startFen={STANDARD_START_FEN} moves={opening.moves} />
+        <OpeningViewer moves={opening.moves} moveExplanations={opening.moveExplanations} />
 
         <div className="detail-notes">
           <Card>

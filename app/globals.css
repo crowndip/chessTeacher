@@ -453,12 +453,20 @@ h3,
 
 .move-list li {
   display: flex;
+  align-items: center;
   gap: 10px;
 }
 
 .move-list-number {
   color: var(--pb-muted);
   min-width: 22px;
+}
+
+.move-list-entry {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
 }
 
 .game-result {
@@ -532,6 +540,42 @@ h3,
   color: #9a1f1f;
 }
 
+.quality-neutral {
+  background: var(--pb-light);
+  color: var(--pb-muted);
+}
+
+.eval-badge {
+  display: inline-flex;
+  min-height: 22px;
+  min-width: 40px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  padding: 0 6px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.material-count {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid var(--pb-border);
+  border-radius: 10px;
+  padding: 8px 12px;
+  background: var(--pb-white);
+  font-size: 0.82rem;
+  color: var(--pb-muted);
+}
+
+.material-diff {
+  font-weight: 700;
+  color: var(--pb-ink);
+}
+
 .library-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -591,6 +635,13 @@ h3,
 .move-stepper {
   display: grid;
   gap: 14px;
+}
+
+.sequence-eval-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
 }
 
 .sequence-explanation p {
