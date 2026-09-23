@@ -28,7 +28,7 @@ export function BookExample() {
           Reset
         </button>
       </div>
-      <BookEditor value={value} onChange={setValue} height="460px" />
+      <BookEditor value={value} onChange={setValue} style={{ height: "460px" }} />
     </div>
   );
 }

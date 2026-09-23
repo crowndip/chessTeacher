@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  MockedChat,
-  type ChatMessage,
-  type ChatParticipant,
-} from "@promptbook/components";
+import { Chat, type ChatMessage, type ChatParticipant } from "@promptbook/components";
 import { MessageCircle, X } from "lucide-react";
 import { useState } from "react";
 
@@ -22,16 +18,18 @@ const participants: ChatParticipant[] = [
   },
 ];
 
-const messages: ChatMessage[] = [
+const INITIAL_MESSAGES: ChatMessage[] = [
   {
     id: "1",
-    sender: "AGENT",
+    from: "AGENT",
+    date: new Date(),
     content: "Hi. I am the floating Promptbook agent.",
     isComplete: true,
   },
   {
     id: "2",
-    sender: "AGENT",
+    from: "AGENT",
+    date: new Date(),
     content: "Use this pattern for support, onboarding, or an app-specific assistant.",
     isComplete: true,
   },
@@ -39,6 +37,20 @@ const messages: ChatMessage[] = [
 
 export function FloatingAgent() {
   const [isOpen, setIsOpen] = useState(false);
+  const [messages, setMessages] = useState<ChatMessage[]>(INITIAL_MESSAGES);
+
+  const handleMessage = (content: string) => {
+    setMessages((current) => [
+      ...current,
+      {
+        id: `${current.length + 1}`,
+        from: "USER",
+        date: new Date(),
+        content,
+        isComplete: true,
+      },
+    ]);
+  };
 
   return (
     <div className="floating-agent">
@@ -53,20 +65,14 @@ export function FloatingAgent() {
             <X size={18} />
           </button>
 
-          <MockedChat
-            title="Promptbook Agent"
-            layout="STANDALONE"
+          <Chat
             style={{ height: "420px" }}
             messages={messages}
             participants={participants}
-            delayConfig={{ blocky: true, showIntermediateMessages: messages.length }}
+            onMessage={handleMessage}
             placeholderMessageContent="Ask anything…"
-            appendMessagesLocallyOnSend
             isFocusedOnLoad={false}
             isSaveButtonEnabled={false}
-            isCopyButtonEnabled={false}
-            isResettable={false}
-            isPausable={false}
           />
         </div>
       ) : null}

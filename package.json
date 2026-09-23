@@ -11,7 +11,7 @@
     "check": "npm run lint && npm run typecheck"
   },
   "dependencies": {
-    "@promptbook/components": "latest",
+    "@promptbook/components": "^0.100.2",
     "leaflet": "1.9.4",
     "lucide-react": "0.536.0",
     "next": "latest",
