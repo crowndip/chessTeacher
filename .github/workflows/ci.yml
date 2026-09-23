@@ -5,8 +5,11 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
-  verify:
+  web:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -19,10 +22,50 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Lint and typecheck
         run: npm run check
 
       - name: Build
         run: npm run build
+
+  engine:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: engine/package-lock.json
+
+      - name: Install dependencies
+        working-directory: engine
+        run: npm ci
+
+      - name: Typecheck and build
+        working-directory: engine
+        run: npm run build
+
+  docker:
+    needs: [web, engine]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build web image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+
+      - name: Build engine image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./engine
+          push: false
