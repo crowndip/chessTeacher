@@ -13,8 +13,8 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "Chess Trainer",
-  description: "Play chess against an adjustable-strength engine, study openings, and review your games.",
+  title: "ChessTeacher",
+  description: "Play chess against an adjustable-strength engine, study openings, drill tactics, and review your games.",
 };
 
 export default function RootLayout({

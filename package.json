@@ -1,7 +1,8 @@
 {
-  "name": "promptbook-starter",
+  "name": "chess-teacher",
   "version": "0.1.0",
   "private": true,
+  "description": "Play chess against an adjustable-strength engine, study openings, drill tactics, and review your games.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -12,7 +13,6 @@
   },
   "dependencies": {
     "chess.js": "^1.4.0",
-    "leaflet": "1.9.4",
     "lucide-react": "0.536.0",
     "next": "latest",
     "react": "latest",
@@ -21,7 +21,6 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "latest",
-    "@types/leaflet": "1.9.21",
     "@types/node": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",

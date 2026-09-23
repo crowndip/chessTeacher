@@ -121,14 +121,6 @@ h3,
   letter-spacing: -0.03em;
 }
 
-.brand-label {
-  color: var(--pb-green-dark);
-  font-size: 0.68rem;
-  font-weight: 800;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-}
-
 .header-nav {
   display: flex;
   align-items: center;
