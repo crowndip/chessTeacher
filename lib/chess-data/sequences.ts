@@ -14,6 +14,8 @@ export type Sequence = {
   moves: string[];
   /** Explanation shown after each move in `moves`, same length as `moves`. */
   explanations: string[];
+  /** Two escalating verbal hints for puzzle (solve) mode. A 3rd, automatic hint shows the move as an arrow. */
+  hints: [string, string];
 };
 
 export const SEQUENCES: Sequence[] = [
@@ -30,6 +32,7 @@ export const SEQUENCES: Sequence[] = [
       "Black has no way to save both pieces and must move the king out of check.",
       "White simply captures the rook, coming out a full rook ahead.",
     ],
+    hints: ["Look for a knight move that gives check.", "The knight can jump to c7 — what does that attack?"],
   },
   {
     slug: "absolute-pin",
@@ -43,6 +46,10 @@ export const SEQUENCES: Sequence[] = [
       "The knight on c6 was pinned to the king along the b5–e8 diagonal, so it could never move to block or capture the bishop. White simply takes it, with check.",
       "Black has to step the king out of check. White is now a full piece ahead — this is why pinned pieces are often not really 'defending' anything.",
     ],
+    hints: [
+      "The black knight is pinned and can't move — is it defended by anything else?",
+      "Capture on c6 with check.",
+    ],
   },
   {
     slug: "back-rank-mate",
@@ -55,6 +62,7 @@ export const SEQUENCES: Sequence[] = [
     explanations: [
       "Black's own pawns on f7, g7 and h7 block every escape square. With the a-file completely open and nothing able to block or capture on a8, the rook delivers checkmate along the back rank — watch out for this pattern in almost every endgame.",
     ],
+    hints: ["Black's king has no escape squares — look at the back rank.", "Move your rook all the way to a8."],
   },
   {
     slug: "smothered-mate",
@@ -67,6 +75,7 @@ export const SEQUENCES: Sequence[] = [
     explanations: [
       "Black's own rook and pawns occupy every square around the king, so it has no flight squares — and nothing on the board can capture a knight on f7. This 'smothered mate' pattern, often set up with a queen sacrifice, is one of the most famous in chess.",
     ],
+    hints: ["The black king is completely boxed in by its own pieces.", "Jump the knight to f7."],
   },
   {
     slug: "kings-in-opposition",
@@ -78,6 +87,10 @@ export const SEQUENCES: Sequence[] = [
     moves: ["Kd5"],
     explanations: [
       "White can't play Ke6 — kings are never allowed to stand adjacent to each other. Instead White sidesteps to d5, waiting for a moment to advance. Whoever is forced to give way first when the kings face off is said to have 'lost the opposition' — a key idea in almost every king-and-pawn endgame.",
+    ],
+    hints: [
+      "You can't move directly toward the enemy king — think about keeping a safe distance while gaining ground.",
+      "Step the king sideways to d5.",
     ],
   },
   {
@@ -92,6 +105,7 @@ export const SEQUENCES: Sequence[] = [
       "The knight was blocking the bishop's own diagonal toward h6. Moving it away uncovers a check from the bishop — a discovered check, where the piece that moves isn't the one giving check, so it's often free to do something else useful (here, attacking) at the same time.",
       "Black must move the king out of the bishop's line of attack.",
     ],
+    hints: ["Something is blocking your own bishop's diagonal.", "Move the knight away from d2 — try b3."],
   },
   {
     slug: "skewer",
@@ -106,6 +120,7 @@ export const SEQUENCES: Sequence[] = [
       "Black steps out of check, but the rook behind was left completely undefended.",
       "With the king out of the way, the bishop simply captures the rook it was 'seeing through' all along.",
     ],
+    hints: ["The enemy king and rook are lined up on the same diagonal.", "Give check with the bishop from c4."],
   },
   {
     slug: "deflection",
@@ -119,6 +134,10 @@ export const SEQUENCES: Sequence[] = [
       "The rook check forces Black to respond immediately — and the queen is the only piece that can block on f8.",
       "Blocking the check is natural, but it deflects the queen away from the 6th rank, where it was the only thing defending the rook on a6.",
       "With the defender deflected, White simply picks up the now-undefended rook.",
+    ],
+    hints: [
+      "The black queen is the only defender of the rook on a6 — how can you force it away?",
+      "Check the king with your rook on e8.",
     ],
   },
   {
@@ -134,6 +153,7 @@ export const SEQUENCES: Sequence[] = [
       "Black has to deal with the check right away, unable to contest e5.",
       "Only now does White recapture the bishop, having gained a free check along the way that a direct recapture wouldn't have earned.",
     ],
+    hints: ["Don't recapture right away — is there a stronger move first?", "Give check with the bishop on b5."],
   },
   {
     slug: "removing-the-defender",
@@ -147,6 +167,10 @@ export const SEQUENCES: Sequence[] = [
       "The knight on f6 was the only piece defending the knight on e4. White trades it off first.",
       "Black recaptures with the pawn — a reasonable choice, but it doesn't restore the defense of e4.",
       "With the defender gone, White wins the second knight for free.",
+    ],
+    hints: [
+      "One black knight is defending the other — deal with the defender first.",
+      "Capture the knight on f6.",
     ],
   },
   {
@@ -163,6 +187,10 @@ export const SEQUENCES: Sequence[] = [
       "The knight joins with check, gaining another tempo and eyeing further inroads near the king.",
       "The king has to retreat, further boxed in by its own pawns.",
       "The queen swings over to h5, aiming straight at h7 and g6 — Black's position is falling apart with no good defense left.",
+    ],
+    hints: [
+      "A well-known sacrifice on h7 rips open the king's cover.",
+      "Capture the pawn on h7 with your bishop, giving check.",
     ],
   },
 ];

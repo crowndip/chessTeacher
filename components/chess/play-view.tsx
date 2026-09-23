@@ -3,62 +3,75 @@
 import { Chess } from "chess.js";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button, Card } from "@/components/ui";
-import { ChessBoard } from "@/components/chess/board";
+import { ChessBoard, type BoardArrow } from "@/components/chess/board";
+import { CoachCard } from "@/components/chess/coach-card";
 import { EloSlider } from "@/components/chess/elo-slider";
-import { EvalBadge } from "@/components/chess/eval-badge";
+import { Legend } from "@/components/chess/legend";
 import { MaterialCount } from "@/components/chess/material-count";
-import { classifyMove, type MoveQuality } from "@/lib/chess/review";
-import { SKILL_LEVELS, SKILL_LEVEL_ORDER, type SkillLevel } from "@/lib/chess/skill-level";
+import { MoveList, type MoveListEntry } from "@/components/chess/move-list";
+import { TrainerLayout } from "@/components/chess/trainer-layout";
+import { WinBar } from "@/components/chess/win-bar";
+import { annotateMove, type MoveAnnotation } from "@/lib/chess/annotate";
+import { analyzePosition, requestEngineMove, type PositionAnalysis } from "@/lib/chess/engine-client";
 import { parseUciMove } from "@/lib/chess/uci";
+import { useSkillLevel } from "@/components/chess/skill-level-context";
+import { SKILL_LEVELS } from "@/lib/chess/skill-level";
+import { whiteWinPercent } from "@/lib/chess/win-probability";
 
-type GameStatus = "playing" | "thinking" | "ended";
+type Status = "playing" | "analyzing" | "reviewing-mistake" | "engine-thinking" | "ended";
 
-type MoveRecord = {
-  san: string;
-  evalCp: number | null;
-  mate: number | null;
-  quality: MoveQuality | null;
-};
+type PlyRecord =
+  | { status: "pending"; ply: number; san: string; uci: string; fenBefore: string; fenAfter: string; mover: "w" | "b" }
+  | { status: "done"; annotation: MoveAnnotation };
 
-type PositionEval = { evalCp: number | null; mate: number | null };
+type PlayerColor = "w" | "b";
 
-async function fetchEval(fen: string): Promise<PositionEval> {
-  const response = await fetch("/api/engine/analyze", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ fens: [fen] }),
-  });
-  const data = (await response.json()) as {
-    positions?: Array<{ evalCp: number | null; mate: number | null }>;
-  };
-  const position = data.positions?.[0];
-  return { evalCp: position?.evalCp ?? null, mate: position?.mate ?? null };
-}
+const EMPTY_ANALYSIS: PositionAnalysis = { fen: "", evalCp: 20, mate: null, bestMove: null, pv: [] };
 
 export function PlayView() {
+  const { skillLevel } = useSkillLevel();
   const gameRef = useRef(new Chess());
-  const runningEvalRef = useRef<PositionEval>({ evalCp: 20, mate: null });
+  const analysisCacheRef = useRef(new Map<string, PositionAnalysis>());
+
   const [fen, setFen] = useState(gameRef.current.fen());
-  const [sanMoves, setSanMoves] = useState<string[]>([]);
-  const [moveRecords, setMoveRecords] = useState<MoveRecord[]>([]);
-  const [status, setStatus] = useState<GameStatus>("playing");
+  const [plies, setPlies] = useState<PlyRecord[]>([]);
+  const [status, setStatus] = useState<Status>("playing");
   const [resultText, setResultText] = useState<string | null>(null);
-  const [skillLevel, setSkillLevel] = useState<SkillLevel>("beginner");
-  const [elo, setElo] = useState(SKILL_LEVELS.beginner.defaultElo);
+  const [elo, setElo] = useState(SKILL_LEVELS[skillLevel].defaultElo);
+  const [playerColor, setPlayerColor] = useState<PlayerColor>("w");
+  const [lastPlayerAnnotation, setLastPlayerAnnotation] = useState<MoveAnnotation | null>(null);
+  const [currentEval, setCurrentEval] = useState<PositionAnalysis>(EMPTY_ANALYSIS);
+  const [selectedPly, setSelectedPly] = useState<number | null>(null);
+  const [engineError, setEngineError] = useState<string | null>(null);
+
+  const gameStarted = plies.length > 0;
+
+  async function getAnalysis(targetFen: string): Promise<PositionAnalysis> {
+    const cached = analysisCacheRef.current.get(targetFen);
+    if (cached) return cached;
+    const result = await analyzePosition(targetFen);
+    analysisCacheRef.current.set(targetFen, result);
+    return result;
+  }
 
   useEffect(() => {
-    void fetchEval(gameRef.current.fen()).then((result) => {
-      runningEvalRef.current = result;
-    });
+    void getAnalysis(gameRef.current.fen()).then((result) => setCurrentEval(result));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const movePairs = useMemo(() => {
-    const pairs: Array<{ number: number; white: MoveRecord; black?: MoveRecord }> = [];
-    for (let i = 0; i < sanMoves.length; i += 2) {
-      pairs.push({ number: i / 2 + 1, white: moveRecords[i], black: moveRecords[i + 1] });
-    }
-    return pairs;
-  }, [sanMoves, moveRecords]);
+  function pushPendingPly(san: string, uci: string, mover: "w" | "b", fenBefore: string, fenAfter: string) {
+    const ply = plies.length + 1;
+    setPlies((current) => [...current, { status: "pending", ply, san, uci, fenBefore, fenAfter, mover }]);
+    return ply;
+  }
+
+  function updatePlyDone(ply: number, annotation: MoveAnnotation) {
+    setPlies((current) =>
+      current.map((record) =>
+        "annotation" in record ? record : record.ply === ply ? { status: "done", annotation } : record,
+      ),
+    );
+  }
 
   function checkGameOver(): boolean {
     const game = gameRef.current;
@@ -78,79 +91,112 @@ export function PlayView() {
     return true;
   }
 
-  async function recordMove(san: string, moverSide: "w" | "b", newFen: string) {
-    let recordIndex = -1;
-    setMoveRecords((records) => {
-      recordIndex = records.length;
-      return [...records, { san, evalCp: null, mate: null, quality: null }];
-    });
+  async function analyzePlayerMove(ply: number, mover: "w" | "b", fenBefore: string, fenAfter: string, san: string, uci: string) {
+    setStatus("analyzing");
+    setEngineError(null);
+    try {
+      const [before, after] = await Promise.all([getAnalysis(fenBefore), getAnalysis(fenAfter)]);
+      setCurrentEval(after);
+      const annotation = annotateMove({
+        ply,
+        san,
+        uci,
+        mover,
+        fenBefore,
+        fenAfter,
+        before,
+        after,
+        explanationDepth: SKILL_LEVELS[skillLevel].explanationDepth,
+      });
+      updatePlyDone(ply, annotation);
+      setLastPlayerAnnotation(annotation);
 
-    const before = runningEvalRef.current;
-    const after = await fetchEval(newFen);
-    const quality = classifyMove(before, after, moverSide);
-    runningEvalRef.current = after;
-
-    setMoveRecords((records) =>
-      records.map((record, i) =>
-        i === recordIndex ? { ...record, evalCp: after.evalCp, mate: after.mate, quality } : record,
-      ),
-    );
+      if (annotation.quality === "mistake" || annotation.quality === "blunder") {
+        setStatus("reviewing-mistake");
+        return;
+      }
+      if (!checkGameOver()) {
+        void playEngineReply();
+      }
+    } catch {
+      setEngineError("Engine unavailable — try again.");
+      setStatus("playing");
+    }
   }
 
-  async function requestEngineMove() {
-    setStatus("thinking");
+  async function playEngineReply() {
+    setStatus("engine-thinking");
+    setEngineError(null);
     try {
-      const moverSide = gameRef.current.turn();
-      const response = await fetch("/api/engine/move", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fen: gameRef.current.fen(), elo }),
-      });
-      const data = (await response.json()) as { move: string | null };
-      if (data.move) {
-        const result = gameRef.current.move(parseUciMove(data.move));
-        if (result) {
-          const newFen = gameRef.current.fen();
-          setSanMoves((moves) => [...moves, result.san]);
-          setFen(newFen);
-          void recordMove(result.san, moverSide, newFen);
-        }
+      const fenBefore = gameRef.current.fen();
+      const mover = gameRef.current.turn();
+      const uci = await requestEngineMove(fenBefore, elo);
+      if (!uci) {
+        checkGameOver();
+        return;
       }
-    } finally {
+      const result = gameRef.current.move(parseUciMove(uci));
+      if (!result) {
+        checkGameOver();
+        return;
+      }
+      const fenAfter = gameRef.current.fen();
+      setFen(fenAfter);
+      const ply = pushPendingPly(result.san, uci, mover, fenBefore, fenAfter);
+
+      const [before, after] = await Promise.all([getAnalysis(fenBefore), getAnalysis(fenAfter)]);
+      setCurrentEval(after);
+      const annotation = annotateMove({
+        ply,
+        san: result.san,
+        uci,
+        mover,
+        fenBefore,
+        fenAfter,
+        before,
+        after,
+        explanationDepth: SKILL_LEVELS[skillLevel].explanationDepth,
+      });
+      updatePlyDone(ply, annotation);
+
       if (!checkGameOver()) setStatus("playing");
+    } catch {
+      setEngineError("Engine unavailable — try again.");
+      setStatus("playing");
     }
   }
 
   function handleMoveAttempt(sourceSquare: string, targetSquare: string): boolean {
-    if (status !== "playing") return false;
-    const moverSide = gameRef.current.turn();
+    if (status !== "playing" || selectedPly !== null) return false;
+    if (gameRef.current.turn() !== playerColor) return false;
+
+    const mover = gameRef.current.turn();
+    const fenBefore = gameRef.current.fen();
     const result = gameRef.current.move({ from: sourceSquare, to: targetSquare, promotion: "q" });
     if (!result) return false;
 
-    const newFen = gameRef.current.fen();
-    setSanMoves((moves) => [...moves, result.san]);
-    setFen(newFen);
-    void recordMove(result.san, moverSide, newFen);
-
-    if (!checkGameOver()) {
-      void requestEngineMove();
-    }
+    const fenAfter = gameRef.current.fen();
+    setFen(fenAfter);
+    const uci = `${sourceSquare}${targetSquare}${result.promotion ?? ""}`;
+    const ply = pushPendingPly(result.san, uci, mover, fenBefore, fenAfter);
+    void analyzePlayerMove(ply, mover, fenBefore, fenAfter, result.san, uci);
     return true;
   }
 
-  function handleUndo() {
-    if (status === "thinking" || sanMoves.length < 2) return;
+  function handleTryAgain() {
+    const last = plies[plies.length - 1];
+    if (!last) return;
     gameRef.current.undo();
-    gameRef.current.undo();
-    const newFen = gameRef.current.fen();
-    setSanMoves((moves) => moves.slice(0, -2));
-    setMoveRecords((records) => records.slice(0, -2));
-    setFen(newFen);
+    setFen(gameRef.current.fen());
+    setPlies((current) => current.slice(0, -1));
+    setLastPlayerAnnotation(null);
     setStatus("playing");
-    setResultText(null);
-    void fetchEval(newFen).then((result) => {
-      runningEvalRef.current = result;
-    });
+    setEngineError(null);
+  }
+
+  function handleContinue() {
+    setStatus("engine-thinking");
+    void playEngineReply();
   }
 
   function handleResign() {
@@ -159,88 +205,217 @@ export function PlayView() {
     setResultText("You resigned.");
   }
 
-  function handleReset() {
+  function handleNewGame(nextColor?: PlayerColor) {
+    const color = nextColor ?? playerColor;
     gameRef.current = new Chess();
-    const startFen = gameRef.current.fen();
-    setSanMoves([]);
-    setMoveRecords([]);
-    setFen(startFen);
+    analysisCacheRef.current.clear();
+    setFen(gameRef.current.fen());
+    setPlies([]);
     setStatus("playing");
     setResultText(null);
-    void fetchEval(startFen).then((result) => {
-      runningEvalRef.current = result;
-    });
+    setLastPlayerAnnotation(null);
+    setSelectedPly(null);
+    setEngineError(null);
+    setPlayerColor(color);
+    void getAnalysis(gameRef.current.fen()).then((result) => setCurrentEval(result));
+    if (color === "b") {
+      setStatus("engine-thinking");
+      void playEngineReply();
+    }
+  }
+
+  function handleChoosePlayerColor(choice: "w" | "b" | "random") {
+    if (gameStarted) return;
+    const color = choice === "random" ? (Math.random() < 0.5 ? "w" : "b") : choice;
+    handleNewGame(color);
+  }
+
+  const doneAnnotations = useMemo(
+    () =>
+      plies.filter((record): record is Extract<PlyRecord, { status: "done" }> => record.status === "done"),
+    [plies],
+  );
+
+  const moveListEntries: MoveListEntry[] = plies.map((record) =>
+    record.status === "done"
+      ? {
+          ply: record.annotation.ply,
+          san: record.annotation.san,
+          quality: record.annotation.quality,
+          evalCp: record.annotation.after.evalCp,
+          mate: record.annotation.after.mate,
+        }
+      : { ply: record.ply, san: record.san, quality: null },
+  );
+
+  const selectedRecord =
+    selectedPly !== null
+      ? doneAnnotations.find((record) => record.annotation.ply === selectedPly)
+      : undefined;
+
+  const displayedFen = selectedRecord ? selectedRecord.annotation.fenAfter : fen;
+  const displayedEval = selectedRecord ? selectedRecord.annotation.after : currentEval;
+
+  const reviewingMistake = status === "reviewing-mistake" && lastPlayerAnnotation && selectedPly === null;
+  const activeAnnotation = selectedRecord ? selectedRecord.annotation : reviewingMistake ? lastPlayerAnnotation : null;
+
+  const boardArrows: BoardArrow[] = [];
+  let lastMoveSquares: { from: string; to: string } | null = null;
+  if (activeAnnotation) {
+    const { from, to } = parseUciMove(activeAnnotation.uci);
+    lastMoveSquares = { from, to };
+    if (activeAnnotation.quality === "mistake" || activeAnnotation.quality === "blunder") {
+      if (activeAnnotation.bestMoveSan && activeAnnotation.before.bestMove) {
+        const bestUci = parseUciMove(activeAnnotation.before.bestMove);
+        boardArrows.push({ from: bestUci.from, to: bestUci.to, kind: "best" });
+      }
+      if (activeAnnotation.threatUci) {
+        const threat = parseUciMove(activeAnnotation.threatUci);
+        boardArrows.push({ from: threat.from, to: threat.to, kind: "threat" });
+      }
+    }
+  }
+
+  const showRawEval = SKILL_LEVELS[skillLevel].showRawEval;
+
+  const playerMoveStats = useMemo(() => {
+    const own = doneAnnotations.filter((record) => record.annotation.mover === playerColor);
+    const counts = { best: 0, good: 0, inaccuracy: 0, mistake: 0, blunder: 0 };
+    for (const record of own) counts[record.annotation.quality]++;
+    const total = own.length;
+    const accuracy = total > 0 ? Math.round(((counts.best + counts.good) / total) * 100) : null;
+
+    const swings = own
+      .map((record) => ({
+        ply: record.annotation.ply,
+        swing: Math.abs(
+          whiteWinPercent(record.annotation.before.evalCp, record.annotation.before.mate) -
+            whiteWinPercent(record.annotation.after.evalCp, record.annotation.after.mate),
+        ),
+      }))
+      .sort((a, b) => b.swing - a.swing)
+      .slice(0, 3);
+
+    return { counts, accuracy, swings };
+  }, [doneAnnotations, playerColor]);
+
+  let coachCard: React.ReactNode;
+  if (status === "ended" && selectedPly === null) {
+    coachCard = (
+      <CoachCard
+        title={resultText ?? "Game over"}
+        body={
+          playerMoveStats.accuracy !== null
+            ? `Your accuracy: ${playerMoveStats.accuracy}% (${playerMoveStats.counts.best + playerMoveStats.counts.good} of ${doneAnnotations.filter((r) => r.annotation.mover === playerColor).length} moves were best or good).`
+            : undefined
+        }
+        actions={[
+          ...playerMoveStats.swings.map((swing, i) => ({
+            label: `Review moment ${i + 1} (move ${Math.ceil(swing.ply / 2)})`,
+            onClick: () => setSelectedPly(swing.ply),
+            variant: "secondary" as const,
+          })),
+          { label: "New game", onClick: () => handleNewGame(), variant: "primary" as const },
+        ]}
+      />
+    );
+  } else if (selectedRecord) {
+    coachCard = (
+      <CoachCard
+        annotation={selectedRecord.annotation}
+        showRawEval={showRawEval === "always"}
+        actions={[{ label: "Back to game", onClick: () => setSelectedPly(null) }]}
+      />
+    );
+  } else if (status === "analyzing") {
+    coachCard = <CoachCard loading />;
+  } else if (engineError) {
+    coachCard = (
+      <CoachCard
+        error={engineError}
+        actions={[{ label: "Retry", onClick: () => (status === "reviewing-mistake" ? handleContinue() : handleNewGame()) }]}
+      />
+    );
+  } else if (reviewingMistake && lastPlayerAnnotation) {
+    coachCard = (
+      <CoachCard
+        annotation={lastPlayerAnnotation}
+        showRawEval={showRawEval === "always"}
+        actions={[
+          { label: "Try again", onClick: handleTryAgain, variant: "primary" },
+          { label: "Continue", onClick: handleContinue, variant: "secondary" },
+        ]}
+      />
+    );
+  } else if (lastPlayerAnnotation) {
+    coachCard = <CoachCard annotation={lastPlayerAnnotation} showRawEval={showRawEval === "always"} />;
+  } else {
+    coachCard = <CoachCard title="Starting position" body="Make a move to get feedback on it." />;
   }
 
   return (
-    <div className="play-view">
-      <div className="play-board-column">
-        <ChessBoard fen={fen} onMoveAttempt={handleMoveAttempt} allowDragging={status === "playing"} />
-        <MaterialCount fen={fen} />
-        <div className="play-controls">
-          <Button variant="secondary" onClick={handleUndo} disabled={sanMoves.length < 2}>
-            Undo
-          </Button>
-          <Button variant="secondary" onClick={handleResign} disabled={status === "ended"}>
-            Resign
-          </Button>
-          <Button variant="ghost" onClick={handleReset}>
-            New game
-          </Button>
-        </div>
-      </div>
-
-      <div className="play-side-column">
-        <Card className="skill-level-picker">
-          <span className="input-label">Skill level</span>
-          <div className="skill-level-options">
-            {SKILL_LEVEL_ORDER.map((level) => (
-              <button
-                key={level}
-                type="button"
-                className="skill-level-option"
-                aria-pressed={skillLevel === level}
-                onClick={() => {
-                  setSkillLevel(level);
-                  setElo(SKILL_LEVELS[level].defaultElo);
-                }}
-              >
-                {SKILL_LEVELS[level].label}
-              </button>
-            ))}
+    <TrainerLayout
+      winBar={<WinBar evalCp={displayedEval.evalCp} mate={displayedEval.mate} loading={status === "analyzing"} />}
+      board={
+        <ChessBoard
+          fen={displayedFen}
+          onMoveAttempt={handleMoveAttempt}
+          allowDragging={status === "playing" && selectedPly === null && gameRef.current.turn() === playerColor}
+          boardOrientation={playerColor === "b" ? "black" : "white"}
+          lastMove={lastMoveSquares}
+          arrows={boardArrows}
+        />
+      }
+      belowBoard={
+        <>
+          <MaterialCount fen={displayedFen} />
+          <div className="play-controls">
+            {!gameStarted ? (
+              <>
+                <Button variant="secondary" onClick={() => handleChoosePlayerColor("w")}>
+                  Play as White
+                </Button>
+                <Button variant="secondary" onClick={() => handleChoosePlayerColor("b")}>
+                  Play as Black
+                </Button>
+                <Button variant="ghost" onClick={() => handleChoosePlayerColor("random")}>
+                  Random
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="secondary" onClick={handleResign} disabled={status === "ended"}>
+                  Resign
+                </Button>
+                <Button variant="ghost" onClick={() => handleNewGame()}>
+                  New game
+                </Button>
+              </>
+            )}
           </div>
-          <p className="skill-level-description">{SKILL_LEVELS[skillLevel].description}</p>
-        </Card>
-
-        <EloSlider elo={elo} onChange={setElo} disabled={status === "thinking"} />
-
+          <EloSlider elo={elo} onChange={setElo} disabled={status === "engine-thinking" || status === "analyzing"} />
+        </>
+      }
+      coach={coachCard}
+      sidebar={
         <Card className="move-list-card">
-          <span className="input-label">Moves</span>
-          <ol className="move-list">
-            {movePairs.map((pair) => (
-              <li key={pair.number}>
-                <span className="move-list-number">{pair.number}.</span>
-                <span className="move-list-entry">
-                  {pair.white.san}
-                  <EvalBadge evalCp={pair.white.evalCp} mate={pair.white.mate} quality={pair.white.quality} />
-                </span>
-                {pair.black ? (
-                  <span className="move-list-entry">
-                    {pair.black.san}
-                    <EvalBadge evalCp={pair.black.evalCp} mate={pair.black.mate} quality={pair.black.quality} />
-                  </span>
-                ) : null}
-              </li>
-            ))}
-          </ol>
+          <div className="move-list-card-header">
+            <span className="input-label">Moves</span>
+            <Legend />
+          </div>
+          <MoveList
+            entries={moveListEntries}
+            selectedPly={selectedPly}
+            onSelect={(ply) => setSelectedPly(ply)}
+            showRawEval={showRawEval}
+          />
+          {selectedPly !== null ? (
+            <Button variant="ghost" onClick={() => setSelectedPly(null)}>
+              Back to live game
+            </Button>
+          ) : null}
         </Card>
-
-        {status === "ended" ? (
-          <Card className="game-result">
-            <p>{resultText}</p>
-          </Card>
-        ) : null}
-      </div>
-    </div>
+      }
+    />
   );
 }

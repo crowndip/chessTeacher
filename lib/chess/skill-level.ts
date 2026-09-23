@@ -8,6 +8,10 @@ export type SkillLevelConfig = {
   explanationDepth: "verbose" | "terse";
   /** Number of openings shown by default before "show all" is used. */
   openingLibraryPreviewSize: number;
+  /** When raw centipawn/pawn evaluation numbers are shown next to move-quality dots. */
+  showRawEval: "never" | "hover" | "always";
+  /** How many escalating hint levels are offered in puzzle mode (1 = arrow only). */
+  hintLevels: 1 | 2 | 3;
 };
 
 export const SKILL_LEVELS: Record<SkillLevel, SkillLevelConfig> = {
@@ -17,6 +21,8 @@ export const SKILL_LEVELS: Record<SkillLevel, SkillLevelConfig> = {
     defaultElo: 1320,
     explanationDepth: "verbose",
     openingLibraryPreviewSize: 6,
+    showRawEval: "never",
+    hintLevels: 3,
   },
   intermediate: {
     label: "Intermediate",
@@ -24,6 +30,8 @@ export const SKILL_LEVELS: Record<SkillLevel, SkillLevelConfig> = {
     defaultElo: 1700,
     explanationDepth: "verbose",
     openingLibraryPreviewSize: 12,
+    showRawEval: "hover",
+    hintLevels: 2,
   },
   advanced: {
     label: "Advanced",
@@ -31,6 +39,8 @@ export const SKILL_LEVELS: Record<SkillLevel, SkillLevelConfig> = {
     defaultElo: 2100,
     explanationDepth: "terse",
     openingLibraryPreviewSize: 20,
+    showRawEval: "always",
+    hintLevels: 1,
   },
   expert: {
     label: "Expert",
@@ -38,6 +48,8 @@ export const SKILL_LEVELS: Record<SkillLevel, SkillLevelConfig> = {
     defaultElo: 2600,
     explanationDepth: "terse",
     openingLibraryPreviewSize: Infinity,
+    showRawEval: "always",
+    hintLevels: 1,
   },
 };
 

@@ -17,6 +17,8 @@ export type AnalyzedPosition = {
   evalCp: number | null;
   /** Mate in N (positive = White mates, negative = Black mates), if the engine found a forced mate. */
   mate: number | null;
+  /** Principal variation (best line found), as UCI moves, up to 6 moves. */
+  pv: string[];
 };
 
 function sideToMove(fen: string): "w" | "b" {
@@ -119,11 +121,13 @@ export class StockfishProcess {
 
       let evalCp: number | null = null;
       let mate: number | null = null;
+      let pv: string[] = [];
       const stm = sideToMove(fen);
 
       const onInfoLine = (line: string) => {
         const cpMatch = line.match(/score cp (-?\d+)/);
         const mateMatch = line.match(/score mate (-?\d+)/);
+        const pvMatch = line.match(/ pv (.+)$/);
         if (cpMatch) {
           const raw = Number(cpMatch[1]);
           evalCp = stm === "w" ? raw : -raw;
@@ -132,6 +136,9 @@ export class StockfishProcess {
           const raw = Number(mateMatch[1]);
           mate = stm === "w" ? raw : -raw;
           evalCp = null;
+        }
+        if (pvMatch) {
+          pv = pvMatch[1].trim().split(/\s+/).slice(0, 6);
         }
       };
 
@@ -146,6 +153,7 @@ export class StockfishProcess {
         bestMove: move === "(none)" ? null : move,
         evalCp,
         mate,
+        pv,
       };
     });
   }

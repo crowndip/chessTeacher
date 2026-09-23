@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { SiteShell } from "@/components/site-shell";
-import { SequenceStepper } from "@/components/chess/sequence-stepper";
+import { SequenceTrainer } from "@/components/chess/sequence-trainer";
 import { getSequence, SEQUENCES } from "@/lib/chess-data/sequences";
 
 export function generateStaticParams() {
@@ -17,6 +17,9 @@ export default async function SequenceDetailPage({
   const sequence = getSequence(slug);
   if (!sequence) notFound();
 
+  const index = SEQUENCES.findIndex((s) => s.slug === slug);
+  const next = SEQUENCES[index + 1];
+
   return (
     <SiteShell>
       <div className="page-intro">
@@ -25,7 +28,13 @@ export default async function SequenceDetailPage({
         <p>{sequence.summary}</p>
       </div>
 
-      <SequenceStepper startFen={sequence.startFen} moves={sequence.moves} explanations={sequence.explanations} />
+      <SequenceTrainer
+        startFen={sequence.startFen}
+        moves={sequence.moves}
+        explanations={sequence.explanations}
+        hints={sequence.hints}
+        nextSequence={next ? { slug: next.slug, title: next.title } : undefined}
+      />
     </SiteShell>
   );
 }

@@ -4,8 +4,9 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Badge, Button, Card } from "@/components/ui";
 import { SiteShell } from "@/components/site-shell";
+import { useSkillLevel } from "@/components/chess/skill-level-context";
 import { OPENINGS } from "@/lib/chess-data/openings";
-import { SKILL_LEVELS, SKILL_LEVEL_ORDER, type SkillLevel } from "@/lib/chess/skill-level";
+import { SKILL_LEVELS, type SkillLevel } from "@/lib/chess/skill-level";
 
 const LEVEL_RANK: Record<SkillLevel, number> = {
   beginner: 0,
@@ -14,8 +15,8 @@ const LEVEL_RANK: Record<SkillLevel, number> = {
   expert: 3,
 };
 
-export default function OpeningsPage() {
-  const [skillLevel, setSkillLevel] = useState<SkillLevel>("beginner");
+function OpeningsList() {
+  const { skillLevel } = useSkillLevel();
   const [showAll, setShowAll] = useState(false);
 
   const openings = useMemo(() => {
@@ -25,31 +26,14 @@ export default function OpeningsPage() {
   }, [skillLevel, showAll]);
 
   return (
-    <SiteShell>
+    <>
       <div className="page-intro">
         <h1>Opening library</h1>
-        <p>Named openings with the idea behind them and typical plans for both sides.</p>
+        <p>
+          Named openings with the idea behind them and typical plans for both sides. Showing openings for{" "}
+          {SKILL_LEVELS[skillLevel].label} level — change your level in the header to see more or fewer.
+        </p>
       </div>
-
-      <Card className="skill-level-picker">
-        <span className="input-label">Skill level</span>
-        <div className="skill-level-options">
-          {SKILL_LEVEL_ORDER.map((level) => (
-            <button
-              key={level}
-              type="button"
-              className="skill-level-option"
-              aria-pressed={skillLevel === level}
-              onClick={() => {
-                setSkillLevel(level);
-                setShowAll(false);
-              }}
-            >
-              {SKILL_LEVELS[level].label}
-            </button>
-          ))}
-        </div>
-      </Card>
 
       <div className="library-grid">
         {openings.map((opening) => (
@@ -70,6 +54,14 @@ export default function OpeningsPage() {
           Show all openings
         </Button>
       ) : null}
+    </>
+  );
+}
+
+export default function OpeningsPage() {
+  return (
+    <SiteShell>
+      <OpeningsList />
     </SiteShell>
   );
 }
