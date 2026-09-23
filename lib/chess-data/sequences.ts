@@ -193,6 +193,74 @@ export const SEQUENCES: Sequence[] = [
       "Capture the pawn on h7 with your bishop, giving check.",
     ],
   },
+  {
+    slug: "decoy",
+    title: "Decoy",
+    theme: "tactics",
+    level: "advanced",
+    summary: "A sacrifice lures a piece onto a square where a second tactic — here, a fork — can hit it.",
+    startFen: "1r2k3/8/8/3QN3/8/8/8/6K1 w - - 0 1",
+    moves: ["Qd8+", "Kxd8", "Nc6+"],
+    explanations: [
+      "The queen sacrifices itself with check, decoying the king onto d8 — a square a knight can fork next.",
+      "Capturing looks natural, since nothing else can deal with the check and the queen isn't defended.",
+      "The knight jumps in with check, forking the king and the rook on b8 at once. The sacrifice pays for itself and then some.",
+    ],
+    hints: [
+      "A sacrifice can force the king onto a square where a knight fork is waiting.",
+      "Give check with the queen on d8.",
+    ],
+  },
+  {
+    slug: "overload",
+    title: "Overload",
+    theme: "tactics",
+    level: "advanced",
+    summary: "One defender can't cover two jobs at once — attack the piece it's least willing to give up.",
+    startFen: "3n3k/8/8/1r1q2B1/3N4/8/8/6K1 w - - 0 1",
+    moves: ["Nxb5", "Qxb5", "Bxd8"],
+    explanations: [
+      "The black queen was defending both the rook on b5 and the knight on d8 at the same time — it can't do both once one of them is attacked.",
+      "Recapturing saves the rook, but the queen is no longer defending the knight on d8.",
+      "With the queen pulled away, White simply picks up the knight too. The overloaded defender couldn't hold both.",
+    ],
+    hints: [
+      "The black queen is doing two jobs — find the piece it's defending that's least protected.",
+      "Capture the rook on b5 first.",
+    ],
+  },
+  {
+    slug: "anastasias-mate",
+    title: "Anastasia's Mate",
+    theme: "checkmate-patterns",
+    level: "advanced",
+    summary: "A knight seals off the king's escape squares while a rook delivers mate along the edge of the board.",
+    startFen: "7k/4N1p1/8/8/8/8/K7/R7 w - - 0 1",
+    moves: ["Rh1#"],
+    explanations: [
+      "The knight on e7 covers g8, the pawn on g7 blocks the only other nearby square, and the rook comes all the way down the open h-file. The king can't step off the file — it's still in check everywhere along it — and has nowhere else to go. Checkmate.",
+    ],
+    hints: [
+      "The king is stuck on the edge of the board, and the knight already covers its one escape square.",
+      "Bring the rook all the way down to the h-file.",
+    ],
+  },
+  {
+    slug: "bodens-mate",
+    title: "Boden's Mate",
+    theme: "checkmate-patterns",
+    level: "advanced",
+    summary: "Two bishops on crossing diagonals trap a king that's boxed in by its own pieces.",
+    startFen: "1bkr4/2p5/8/8/B7/8/8/4KB2 w - - 0 1",
+    moves: ["Ba6#"],
+    explanations: [
+      "One bishop already covers d7 from a4. The other swings all the way to a6, delivering check along the a6–c8 diagonal. The king's own bishop, pawn and rook block every other square, and nothing can capture the checking bishop or block the single gap on b7. Checkmate — a classic pattern that often follows a queen sacrifice to clear the diagonal.",
+    ],
+    hints: [
+      "Two bishops on crossing diagonals, with the king's own pieces blocking its escape.",
+      "Move the second bishop all the way to a6.",
+    ],
+  },
 ];
 
 export function getSequence(slug: string): Sequence | undefined {
