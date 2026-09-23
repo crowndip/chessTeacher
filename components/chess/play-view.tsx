@@ -56,7 +56,6 @@ export function PlayView() {
 
   useEffect(() => {
     void getAnalysis(gameRef.current.fen()).then((result) => setCurrentEval(result));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function pushPendingPly(san: string, uci: string, mover: "w" | "b", fenBefore: string, fenAfter: string) {

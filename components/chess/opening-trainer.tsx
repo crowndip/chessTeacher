@@ -32,18 +32,22 @@ export function OpeningTrainer({ moves, moveExplanations, moveIdeas, explanation
     return positions;
   }, [moves]);
 
-  const [bookEvals, setBookEvals] = useState<Array<PositionAnalysis | null>>(() => bookFens.map(() => null));
+  const [bookEvals, setBookEvals] = useState<{ fens: string[]; evals: Array<PositionAnalysis | null> }>(() => ({
+    fens: bookFens,
+    evals: bookFens.map(() => null),
+  }));
 
   useEffect(() => {
     let cancelled = false;
-    setBookEvals(bookFens.map(() => null));
     void analyzePositions(bookFens).then((positions) => {
-      if (!cancelled) setBookEvals(positions);
+      if (!cancelled) setBookEvals({ fens: bookFens, evals: positions });
     });
     return () => {
       cancelled = true;
     };
   }, [bookFens]);
+
+  const resolvedBookEvals = bookEvals.fens === bookFens ? bookEvals.evals : bookFens.map(() => null);
 
   function bookMoveSquares(index: number): { from: string; to: string } | null {
     try {
@@ -117,7 +121,7 @@ export function OpeningTrainer({ moves, moveExplanations, moveIdeas, explanation
 
   const activeStep = mode === "learn" ? step : quizStep;
   const displayedFen = bookFens[activeStep];
-  const displayedEval = bookEvals[activeStep] ?? EMPTY_ANALYSIS;
+  const displayedEval = resolvedBookEvals[activeStep] ?? EMPTY_ANALYSIS;
 
   const arrows: BoardArrow[] = [];
   let lastMove: { from: string; to: string } | null = null;

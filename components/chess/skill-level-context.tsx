@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useSyncExternalStore, type ReactNode } from "react";
 import { SKILL_LEVELS, SKILL_LEVEL_ORDER, type SkillLevel } from "@/lib/chess/skill-level";
 
 const STORAGE_KEY = "chess-trainer:skill-level";
@@ -12,6 +12,11 @@ type SkillLevelContextValue = {
 
 const SkillLevelContext = createContext<SkillLevelContextValue | null>(null);
 
+// Module-level store so the picked level survives across component instances and can be
+// read synchronously on the client (via useSyncExternalStore) without an SSR hydration mismatch.
+let cachedSkillLevel: SkillLevel | null = null;
+const listeners = new Set<() => void>();
+
 function readStoredSkillLevel(): SkillLevel {
   try {
     const stored = window.localStorage.getItem(STORAGE_KEY);
@@ -22,24 +27,37 @@ function readStoredSkillLevel(): SkillLevel {
   return "beginner";
 }
 
-export function SkillLevelProvider({ children }: { children: ReactNode }) {
-  const [skillLevel, setSkillLevelState] = useState<SkillLevel>("beginner");
+function getSnapshot(): SkillLevel {
+  cachedSkillLevel ??= readStoredSkillLevel();
+  return cachedSkillLevel;
+}
 
-  useEffect(() => {
-    setSkillLevelState(readStoredSkillLevel());
-  }, []);
+function getServerSnapshot(): SkillLevel {
+  return "beginner";
+}
 
-  function setSkillLevel(level: SkillLevel) {
-    setSkillLevelState(level);
-    try {
-      window.localStorage.setItem(STORAGE_KEY, level);
-    } catch {
-      // Ignore write failures - the in-memory state still updates.
-    }
+function subscribe(callback: () => void) {
+  listeners.add(callback);
+  return () => listeners.delete(callback);
+}
+
+function writeSkillLevel(level: SkillLevel) {
+  cachedSkillLevel = level;
+  try {
+    window.localStorage.setItem(STORAGE_KEY, level);
+  } catch {
+    // Ignore write failures - the in-memory state still updates.
   }
+  listeners.forEach((listener) => listener());
+}
+
+export function SkillLevelProvider({ children }: { children: ReactNode }) {
+  const skillLevel = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   return (
-    <SkillLevelContext.Provider value={{ skillLevel, setSkillLevel }}>{children}</SkillLevelContext.Provider>
+    <SkillLevelContext.Provider value={{ skillLevel, setSkillLevel: writeSkillLevel }}>
+      {children}
+    </SkillLevelContext.Provider>
   );
 }
 

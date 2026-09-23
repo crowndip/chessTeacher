@@ -3,7 +3,7 @@
 import { Chess } from "chess.js";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button, Card } from "@/components/ui";
+import { Button } from "@/components/ui";
 import { ChessBoard, type BoardArrow } from "@/components/chess/board";
 import { CoachCard, type CoachCardAction } from "@/components/chess/coach-card";
 import { MaterialCount } from "@/components/chess/material-count";
@@ -48,7 +48,10 @@ export function SequenceTrainer({ startFen, moves, explanations, hints, nextSequ
     return positions;
   }, [startFen, moves]);
 
-  const [bookEvals, setBookEvals] = useState<Array<PositionAnalysis | null>>(() => bookFens.map(() => null));
+  const [bookEvals, setBookEvals] = useState<{ fens: string[]; evals: Array<PositionAnalysis | null> }>(() => ({
+    fens: bookFens,
+    evals: bookFens.map(() => null),
+  }));
   const [mode, setMode] = useState<"solve" | "watch">("solve");
   const [step, setStep] = useState(0);
   const [branch, setBranch] = useState<Branch | null>(null);
@@ -58,14 +61,15 @@ export function SequenceTrainer({ startFen, moves, explanations, hints, nextSequ
 
   useEffect(() => {
     let cancelled = false;
-    setBookEvals(bookFens.map(() => null));
     void analyzePositions(bookFens).then((positions) => {
-      if (!cancelled) setBookEvals(positions);
+      if (!cancelled) setBookEvals({ fens: bookFens, evals: positions });
     });
     return () => {
       cancelled = true;
     };
   }, [bookFens]);
+
+  const resolvedBookEvals = bookEvals.fens === bookFens ? bookEvals.evals : bookFens.map(() => null);
 
   useEffect(() => {
     return () => {
@@ -100,7 +104,7 @@ export function SequenceTrainer({ startFen, moves, explanations, hints, nextSequ
   async function handleWrongMove(fenBefore: string, san: string, uci: string, fenAfter: string) {
     setBranch({ fen: fenAfter, san, loading: true, annotation: null });
     try {
-      const before = bookEvals[step] ?? (await analyzePosition(fenBefore));
+      const before = resolvedBookEvals[step] ?? (await analyzePosition(fenBefore));
       const after = await analyzePosition(fenAfter);
       const annotation = annotateMove({
         ply: step + 1,
@@ -155,7 +159,7 @@ export function SequenceTrainer({ startFen, moves, explanations, hints, nextSequ
     void (async () => {
       try {
         const fenBefore = baseFen;
-        const before = branch?.annotation?.after ?? bookEvals[step] ?? (await analyzePosition(fenBefore));
+        const before = branch?.annotation?.after ?? resolvedBookEvals[step] ?? (await analyzePosition(fenBefore));
         const after = await analyzePosition(fenAfter);
         const annotation = annotateMove({
           ply: step + 1,
@@ -207,7 +211,7 @@ export function SequenceTrainer({ startFen, moves, explanations, hints, nextSequ
   }
 
   const displayedFen = branch ? branch.fen : bookFens[step];
-  const bookEval = bookEvals[step] ?? EMPTY_ANALYSIS;
+  const bookEval = resolvedBookEvals[step] ?? EMPTY_ANALYSIS;
   const displayedEval = branch?.annotation ? branch.annotation.after : bookEval;
 
   const arrows: BoardArrow[] = [];

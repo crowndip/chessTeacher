@@ -1,25 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { HelpCircle, X } from "lucide-react";
 import { MOVE_QUALITY_LABEL, type MoveQuality } from "@/lib/chess/review";
 
 const STORAGE_KEY = "chess-trainer:legend-seen";
 const QUALITIES: MoveQuality[] = ["best", "good", "inaccuracy", "mistake", "blunder"];
 
-export function Legend() {
-  const [open, setOpen] = useState(false);
+function shouldAutoOpen() {
+  try {
+    if (window.localStorage.getItem(STORAGE_KEY)) return false;
+    window.localStorage.setItem(STORAGE_KEY, "1");
+    return true;
+  } catch {
+    return false;
+  }
+}
 
-  useEffect(() => {
-    try {
-      if (!window.localStorage.getItem(STORAGE_KEY)) {
-        setOpen(true);
-        window.localStorage.setItem(STORAGE_KEY, "1");
-      }
-    } catch {
-      // localStorage unavailable - just don't auto-open.
-    }
-  }, []);
+export function Legend() {
+  const [open, setOpen] = useState(shouldAutoOpen);
 
   return (
     <div className="legend">
@@ -40,8 +39,8 @@ export function Legend() {
             <X size={14} />
           </button>
           <p>
-            <strong>Win bar</strong> — who's ahead in the current position, as a percentage estimated from
-            the engine's evaluation.
+            <strong>Win bar</strong> — who&apos;s ahead in the current position, as a percentage estimated from
+            the engine&apos;s evaluation.
           </p>
           <p>
             <strong>Move dots</strong> — how good each move was:
@@ -54,7 +53,7 @@ export function Legend() {
               </li>
             ))}
           </ul>
-          <p>Numbers, when shown, are in pawns from White's point of view (e.g. +1.0 favors White).</p>
+          <p>Numbers, when shown, are in pawns from White&apos;s point of view (e.g. +1.0 favors White).</p>
         </div>
       ) : null}
     </div>
