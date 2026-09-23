@@ -763,6 +763,13 @@ h3,
   gap: 10px;
 }
 
+.library-card-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
 .library-card p {
   margin: 0;
   color: var(--pb-muted);
