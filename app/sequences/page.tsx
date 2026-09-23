@@ -4,8 +4,9 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Badge, Card } from "@/components/ui";
 import { SiteShell } from "@/components/site-shell";
+import { useSkillLevel } from "@/components/chess/skill-level-context";
 import { SEQUENCES, type SequenceTheme } from "@/lib/chess-data/sequences";
-import { SKILL_LEVELS, SKILL_LEVEL_ORDER, type SkillLevel } from "@/lib/chess/skill-level";
+import { SKILL_LEVELS, type SkillLevel } from "@/lib/chess/skill-level";
 
 const THEME_LABEL: Record<SequenceTheme, string> = {
   tactics: "Tactics",
@@ -16,23 +17,33 @@ const THEME_LABEL: Record<SequenceTheme, string> = {
 
 const THEMES = Object.keys(THEME_LABEL) as SequenceTheme[];
 
-export default function SequencesPage() {
+const LEVEL_RANK: Record<SkillLevel, number> = {
+  beginner: 0,
+  intermediate: 1,
+  advanced: 2,
+  expert: 3,
+};
+
+function SequencesList() {
+  const { skillLevel } = useSkillLevel();
   const [themeFilter, setThemeFilter] = useState<SequenceTheme | "all">("all");
-  const [levelFilter, setLevelFilter] = useState<SkillLevel | "all">("all");
 
   const sequences = useMemo(
     () =>
       SEQUENCES.filter(
-        (s) => (themeFilter === "all" || s.theme === themeFilter) && (levelFilter === "all" || s.level === levelFilter),
+        (s) => (themeFilter === "all" || s.theme === themeFilter) && LEVEL_RANK[s.level] <= LEVEL_RANK[skillLevel],
       ),
-    [themeFilter, levelFilter],
+    [themeFilter, skillLevel],
   );
 
   return (
-    <SiteShell>
+    <>
       <div className="page-intro">
         <h1>Sample sequences</h1>
-        <p>Step through short tactical and endgame patterns with an explanation at each move.</p>
+        <p>
+          Step through short tactical and endgame patterns with an explanation at each move. Showing sequences for{" "}
+          {SKILL_LEVELS[skillLevel].label} level — change your level in the header to see more or fewer.
+        </p>
       </div>
 
       <Card className="skill-level-picker">
@@ -60,31 +71,6 @@ export default function SequencesPage() {
         </div>
       </Card>
 
-      <Card className="skill-level-picker">
-        <span className="input-label">Level</span>
-        <div className="skill-level-options">
-          <button
-            type="button"
-            className="skill-level-option"
-            aria-pressed={levelFilter === "all"}
-            onClick={() => setLevelFilter("all")}
-          >
-            All
-          </button>
-          {SKILL_LEVEL_ORDER.map((level) => (
-            <button
-              key={level}
-              type="button"
-              className="skill-level-option"
-              aria-pressed={levelFilter === level}
-              onClick={() => setLevelFilter(level)}
-            >
-              {SKILL_LEVELS[level].label}
-            </button>
-          ))}
-        </div>
-      </Card>
-
       <div className="library-grid">
         {sequences.map((sequence) => (
           <Link key={sequence.slug} href={`/sequences/${sequence.slug}`} className="library-card-link">
@@ -101,6 +87,14 @@ export default function SequencesPage() {
           </Link>
         ))}
       </div>
+    </>
+  );
+}
+
+export default function SequencesPage() {
+  return (
+    <SiteShell>
+      <SequencesList />
     </SiteShell>
   );
 }
