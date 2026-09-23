@@ -1,3 +1,4 @@
+import type { SequenceMotif } from "@/lib/chess/lichess-exercise";
 import type { SkillLevel } from "@/lib/chess/skill-level";
 
 export type SequenceTheme = "tactics" | "checkmate-patterns" | "endgame" | "positional";
@@ -16,11 +17,14 @@ export type Sequence = {
   explanations: string[];
   /** Two escalating verbal hints for puzzle (solve) mode. A 3rd, automatic hint shows the move as an arrow. */
   hints: [string, string];
+  /** Lichess puzzle theme ("angle") to pull live "Exercise" puzzles from. Absent = no Exercise button. */
+  motif?: SequenceMotif;
 };
 
 export const SEQUENCES: Sequence[] = [
   {
     slug: "knight-fork",
+    motif: "fork",
     title: "Knight Fork",
     theme: "tactics",
     level: "beginner",
@@ -36,6 +40,7 @@ export const SEQUENCES: Sequence[] = [
   },
   {
     slug: "absolute-pin",
+    motif: "pin",
     title: "Absolute Pin",
     theme: "tactics",
     level: "beginner",
@@ -53,6 +58,7 @@ export const SEQUENCES: Sequence[] = [
   },
   {
     slug: "back-rank-mate",
+    motif: "backRankMate",
     title: "Back-Rank Mate",
     theme: "checkmate-patterns",
     level: "beginner",
@@ -66,6 +72,7 @@ export const SEQUENCES: Sequence[] = [
   },
   {
     slug: "smothered-mate",
+    motif: "smotheredMate",
     title: "Smothered Mate",
     theme: "checkmate-patterns",
     level: "advanced",
@@ -95,6 +102,7 @@ export const SEQUENCES: Sequence[] = [
   },
   {
     slug: "discovered-check",
+    motif: "discoveredCheck",
     title: "Discovered Check",
     theme: "tactics",
     level: "intermediate",
@@ -109,6 +117,7 @@ export const SEQUENCES: Sequence[] = [
   },
   {
     slug: "skewer",
+    motif: "skewer",
     title: "Skewer",
     theme: "tactics",
     level: "intermediate",
@@ -124,6 +133,7 @@ export const SEQUENCES: Sequence[] = [
   },
   {
     slug: "deflection",
+    motif: "deflection",
     title: "Deflection",
     theme: "tactics",
     level: "advanced",
@@ -142,6 +152,7 @@ export const SEQUENCES: Sequence[] = [
   },
   {
     slug: "zwischenzug",
+    motif: "intermezzo",
     title: "Zwischenzug (In-Between Move)",
     theme: "tactics",
     level: "advanced",
@@ -157,6 +168,7 @@ export const SEQUENCES: Sequence[] = [
   },
   {
     slug: "removing-the-defender",
+    motif: "capturingDefender",
     title: "Removing the Defender",
     theme: "tactics",
     level: "advanced",
@@ -195,6 +207,7 @@ export const SEQUENCES: Sequence[] = [
   },
   {
     slug: "decoy",
+    motif: "attraction",
     title: "Decoy",
     theme: "tactics",
     level: "advanced",
@@ -213,6 +226,7 @@ export const SEQUENCES: Sequence[] = [
   },
   {
     slug: "overload",
+    motif: "deflection",
     title: "Overload",
     theme: "tactics",
     level: "advanced",
@@ -231,6 +245,7 @@ export const SEQUENCES: Sequence[] = [
   },
   {
     slug: "anastasias-mate",
+    motif: "anastasiaMate",
     title: "Anastasia's Mate",
     theme: "checkmate-patterns",
     level: "advanced",
@@ -247,6 +262,7 @@ export const SEQUENCES: Sequence[] = [
   },
   {
     slug: "bodens-mate",
+    motif: "bodenMate",
     title: "Boden's Mate",
     theme: "checkmate-patterns",
     level: "advanced",

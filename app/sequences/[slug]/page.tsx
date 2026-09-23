@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { SiteShell } from "@/components/site-shell";
-import { SequenceTrainer } from "@/components/chess/sequence-trainer";
+import { SequenceExerciseView } from "@/components/chess/sequence-exercise-view";
 import { getSequence, SEQUENCES } from "@/lib/chess-data/sequences";
 
 export function generateStaticParams() {
@@ -28,11 +28,8 @@ export default async function SequenceDetailPage({
         <p>{sequence.summary}</p>
       </div>
 
-      <SequenceTrainer
-        startFen={sequence.startFen}
-        moves={sequence.moves}
-        explanations={sequence.explanations}
-        hints={sequence.hints}
+      <SequenceExerciseView
+        sequence={sequence}
         nextSequence={next ? { slug: next.slug, title: next.title } : undefined}
       />
     </SiteShell>

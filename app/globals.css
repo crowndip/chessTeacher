@@ -364,6 +364,20 @@ h3,
   flex-wrap: wrap;
 }
 
+.exercise-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.exercise-error {
+  margin: 0;
+  color: var(--quality-blunder);
+  font-size: 0.85rem;
+}
+
 @media (max-width: 900px) {
   .trainer {
     grid-template-columns: 1fr;
