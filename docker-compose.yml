@@ -7,7 +7,7 @@ services:
     environment:
       - ENGINE_URL=http://engine:4000
     ports:
-      - "3000:3000"
+      - "9999:3000"
     depends_on:
       - engine
 
