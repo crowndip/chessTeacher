@@ -1,0 +1,16 @@
+services:
+  web:
+    image: ghcr.io/crowndip/chessteacher-web:latest
+    restart: unless-stopped
+    environment:
+      - ENGINE_URL=http://engine:4000
+    ports:
+      - "9999:3000"
+    depends_on:
+      - engine
+
+  engine:
+    image: ghcr.io/crowndip/chessteacher-engine:latest
+    restart: unless-stopped
+    expose:
+      - "4000"
